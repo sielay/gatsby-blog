@@ -1,21 +1,61 @@
-import React from "react"
-import { Link } from "gatsby"
+import * as React from 'react';
+import { graphql, Link } from 'gatsby';
+import { Posts } from '../components/Posts';
+import Layout from '../layouts';
+import { Calendar, Tags } from '../components';
 
-import Layout from "../components/layout"
-import Image from "../components/image"
-import SEO from "../components/seo"
+const IndexPage = ({ data: { posts, tags, calendar } }) => {
 
-const IndexPage = () => (
-  <Layout>
-    <SEO title="Home" />
-    <h1>Hi people</h1>
-    <p>Welcome to your new Gatsby site.</p>
-    <p>Now go build something great.</p>
-    <div style={{ maxWidth: `300px`, marginBottom: `1.45rem` }}>
-      <Image />
-    </div>
-    <Link to="/page-2/">Go to page 2</Link>
+  return (
+    <main>
+      <Posts posts={posts.edges.map(post => post.node)} />
+      <Link
+        as={`button`}
+        to={'/blog'}
+      >
+        Read more
+    </Link>
+      <Tags tags={(tags && tags.group) || []} tag={null} />
+      <Calendar entries={(calendar && calendar.group) || []} />
+    </main>
+  );
+};
+
+export default props => (
+  <Layout {...props}>
+    <IndexPage {...props} />
   </Layout>
-)
+);
 
-export default IndexPage
+export const pageQuery = graphql`
+  query PageIndexBlog {
+    site: site {
+      siteMetadata {
+        title
+      }
+    }
+
+    # Get tags
+    tags: allMarkdownRemark {
+      ...tagsFragment
+    }
+
+    # Get calendar
+    calendar: allMarkdownRemark {
+      ...calendarFragment
+    }
+
+    # Get posts
+    posts: allMarkdownRemark(
+      sort: { order: DESC, fields: [frontmatter___updatedDate, frontmatter___title] }
+      filter: {
+        frontmatter: { draft: { ne: true } }
+        fileAbsolutePath: { regex: "/blog/" }
+      }
+      limit: 5
+    ) {
+      ...blogFeedFragment
+    }
+
+  }
+`;
